@@ -38,22 +38,25 @@ class Elasticsearch extends Module
             : array();
     }
 
-    public function seeInElasticsearch($index, $type, $fieldsOrValue)
+    public function seeInElasticsearch($index, $type, $fieldsOrValue = null)
     {
         return $this->assertTrue($this->count($index, $type, $fieldsOrValue) > 0, 'item exists');
     }
 
-    public function dontSeeInElasticsearch($index, $type, $fieldsOrValue)
+    public function dontSeeInElasticsearch($index, $type, $fieldsOrValue = null)
     {
         return $this->assertTrue($this->count($index, $type, $fieldsOrValue) === 0,
             'item does not exist');
     }
 
-    protected function count($index, $type, $fieldsOrValue)
+    protected function count($index, $type, $fieldsOrValue = null)
     {
         $query = [];
 
-        if (is_array($fieldsOrValue)) {
+        if (empty($fieldsOrValue)) {
+            $query = [ 'match_all' => [] ];
+        }
+        elseif (is_array($fieldsOrValue)) {
             $query['bool']['filter'] = array_map(function ($value, $key) {
                 return ['match' => [$key => $value]];
             }, $fieldsOrValue, array_keys($fieldsOrValue));
@@ -68,7 +71,7 @@ class Elasticsearch extends Module
         $params = [
             'index' => $index,
             'type' => $type,
-            'size' => 1,
+            'size' => 0,
             'body' => ['query' => $query],
         ];
 
